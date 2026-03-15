@@ -13,11 +13,11 @@ function attachEventIfExist(id, eventType, callback) {
 // Redirect if already logged in (for login/signup pages)
 function checkAuthRedirect() {
     const path = window.location.pathname;
-    const isAuthPage = path.includes('login.html') || path.includes('signup.html') || path === '/' || path.includes('index.html');
+    const isAuthPage = path.includes('/login') || path.includes('/signup') || path === '/';
     
     // If logged in and on an auth page, redirect to dashboard
     if (localStorage.getItem('userId') && isAuthPage) {
-        window.location.href = 'dashboard.html';
+        window.location.href = '/dashboard';
     }
 }
 

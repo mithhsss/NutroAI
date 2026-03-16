@@ -1,7 +1,7 @@
 from flask import Flask, request, jsonify, render_template
 import sqlite3
 import os
-import google.generativeai as genai
+from google import genai
 from dotenv import load_dotenv
 import json
 import re
@@ -13,8 +13,9 @@ app = Flask(__name__)
 
 # Configure Gemini
 api_key = os.getenv("GEMINI_API_KEY")
+client = None
 if api_key:
-    genai.configure(api_key=api_key)
+    client = genai.Client(api_key=api_key)
 
 def get_db_connection():
     conn = sqlite3.connect('nutriscore.db')
@@ -84,6 +85,117 @@ def profile():
 @app.route('/dashboard')
 def dashboard():
     return render_template('dashboard.html')
+
+@app.route('/user_profile')
+def user_profile():
+    return render_template('user_profile.html')
+
+@app.route('/recommendations/<category>')
+def recommendations(category):
+    # Data dictionary for Salads
+    salad_items = [
+        {"name": "Caesar Salad", "image": "caesar.jpg", "score": 75},
+        {"name": "Spinach and Strawberry Salad", "image": "spinach.jpg", "score": 92},
+        {"name": "Greek Salad with Feta", "image": "greek.jpg", "score": 88},
+        {"name": "Cobb Salad", "image": "cobb.jpg", "score": 70},
+        {"name": "Caprese Salad", "image": "caprese.jpg", "score": 85},
+        {"name": "Kale Quinoa Salad", "image": "kale_quinoa.jpg", "score": 98},
+        {"name": "Waldorf Salad", "image": "waldorf.jpg", "score": 80},
+        {"name": "Avocado Corn Salad", "image": "avocado_corn.jpg", "score": 90},
+        {"name": "Nicoise Salad", "image": "nicoise.jpg", "score": 89},
+        {"name": "Arugula Parmesan Salad", "image": "arugula.jpg", "score": 86},
+        {"name": "Broccoli Crunch Salad", "image": "broccoli.jpg", "score": 82},
+        {"name": "Southwest Chicken Salad", "image": "southwest.jpg", "score": 78},
+        {"name": "Mediterranean Chickpea Salad", "image": "chickpea.jpg", "score": 95},
+        {"name": "Asian Sesame Salad", "image": "sesame.jpg", "score": 84},
+        {"name": "Roasted Beet and Goat Cheese Salad", "image": "beet.jpg", "score": 91}
+    ]
+
+    # Data dictionary for Berries
+    berries_items = [
+        {"name": "Blueberries", "image": "blueberries.jpg", "score": 95},
+        {"name": "Strawberries", "image": "strawberries.jpg", "score": 90},
+        {"name": "Raspberries", "image": "raspberries.jpg", "score": 92},
+        {"name": "Blackberries", "image": "blackberries.jpg", "score": 94},
+        {"name": "Cranberries", "image": "cranberries.jpg", "score": 85},
+        {"name": "Mixed Berry Bowl", "image": "mixed_bowl.jpg", "score": 98},
+        {"name": "Goji Berries", "image": "goji.jpg", "score": 88},
+        {"name": "Acai Bowl", "image": "acai.jpg", "score": 82},
+        {"name": "Mulberries", "image": "mulberries.jpg", "score": 89},
+        {"name": "Boysenberries", "image": "boysenberries.jpg", "score": 86},
+        {"name": "Elderberries", "image": "elderberries.jpg", "score": 91},
+        {"name": "Gooseberries", "image": "gooseberries.jpg", "score": 84},
+        {"name": "Cloudberries", "image": "cloudberries.jpg", "score": 80},
+        {"name": "Loganberries", "image": "loganberries.jpg", "score": 83},
+        {"name": "Marionberries", "image": "marionberries.jpg", "score": 87}
+    ]
+
+    # Data dictionary for Proteins
+    protein_items = [
+        {"name": "Grilled Chicken Breast", "image": "chicken.jpg", "score": 90},
+        {"name": "Salmon Fillet", "image": "salmon.jpg", "score": 95},
+        {"name": "Hard Boiled Eggs", "image": "eggs.jpg", "score": 85},
+        {"name": "Greek Yogurt", "image": "yogurt.jpg", "score": 88},
+        {"name": "Lentil Soup", "image": "lentils.jpg", "score": 92},
+        {"name": "Tofu Scramble", "image": "tofu.jpg", "score": 87},
+        {"name": "Edamame", "image": "edamame.jpg", "score": 89},
+        {"name": "Cottage Cheese", "image": "cottage_cheese.jpg", "score": 82},
+        {"name": "Lean Beef Steak", "image": "beef.jpg", "score": 75},
+        {"name": "Turkey Breast", "image": "turkey.jpg", "score": 86},
+        {"name": "Chickpea Salad", "image": "chickpeas.jpg", "score": 91},
+        {"name": "Quinoa Bowl", "image": "quinoa.jpg", "score": 94},
+        {"name": "Black Beans", "image": "black_beans.jpg", "score": 93},
+        {"name": "Protein Shake", "image": "shake.jpg", "score": 78},
+        {"name": "Almonds", "image": "almonds.jpg", "score": 84}
+    ]
+
+    # Data dictionary for Detox Water
+    water_items = [
+        {"name": "Lemon Mint Water", "image": "lemon_mint.jpg", "score": 100},
+        {"name": "Cucumber Water", "image": "cucumber.jpg", "score": 100},
+        {"name": "Strawberry Basil Water", "image": "strawberry_basil.jpg", "score": 98},
+        {"name": "Watermelon Mint Water", "image": "watermelon.jpg", "score": 95},
+        {"name": "Grapefruit Rosemary Water", "image": "grapefruit.jpg", "score": 97},
+        {"name": "Apple Cinnamon Water", "image": "apple_cinnamon.jpg", "score": 92},
+        {"name": "Ginger Lemon Water", "image": "ginger_lemon.jpg", "score": 99},
+        {"name": "Orange Blueberry Water", "image": "orange_blueberry.jpg", "score": 96},
+        {"name": "Pineapple Mint Water", "image": "pineapple_mint.jpg", "score": 94},
+        {"name": "Lime Raspberry Water", "image": "lime_raspberry.jpg", "score": 98},
+        {"name": "Chia Seed Water", "image": "chia.jpg", "score": 100},
+        {"name": "Aloe Vera Water", "image": "aloe.jpg", "score": 90},
+        {"name": "Coconut Water", "image": "coconut.jpg", "score": 95},
+        {"name": "Green Tea Detox", "image": "green_tea.jpg", "score": 99},
+        {"name": "Pomegranate Mint Water", "image": "pomegranate.jpg", "score": 97}
+    ]
+
+    # Map the requested URL category parameter to the data
+    data_map = {
+        'salads': {
+            'title': 'Leafy Salads',
+            'items': salad_items
+        },
+        'berries': {
+            'title': 'Berries',
+            'items': berries_items
+        },
+        'proteins': {
+            'title': 'High Protein',
+            'items': protein_items
+        },
+        'water': {
+            'title': 'Detox Water',
+            'items': water_items
+        }
+    }
+
+    category_data = data_map.get(category)
+    if not category_data:
+        return "Category Not Found", 404
+
+    return render_template('recommendations.html', 
+                           category_id=category, 
+                           title=category_data['title'], 
+                           items=category_data['items'])
 
 
 # ---- API Routes ---- #
@@ -187,8 +299,29 @@ def api_dashboard(user_id):
 def api_logs(user_id):
     data = request.get_json()
     food_name = data.get('food_name')
-    score = data.get('score')
     current_date = date.today().isoformat()
+    
+    # Try sending explicit score first (used directly inside the dashboard 'Analyze Label' route)
+    score = data.get('score')
+    
+    # Otherwise, automatically query Gemini
+    if score is None:
+        if not client:
+            return jsonify({'error': 'Gemini API is not configured.'}), 500
+        
+        try:
+            prompt = f"Estimate a single health score from 0 to 100 for the food item: '{food_name}'. (100 being perfectly healthy, e.g. plain vegetables, and 0 being terrible, e.g. deep fried oreos). Return ONLY the integer number, nothing else."
+            response = client.models.generate_content(model='gemini-3-flash-preview', contents=prompt)
+            print(f"-- Debug: AI estimated {response.text.strip()} for {food_name}")
+            # Ensure it is a valid integer string representing score before storing
+            score_match = re.search(r'\d+', response.text)
+            if score_match:
+                score = int(score_match.group(0))
+            else:
+                score = 50 # Default fallback
+        except Exception as e:
+            print("Gemini Logging Error:", e)
+            score = 50 # Default fallback
 
     conn = get_db_connection()
     try:
@@ -202,16 +335,61 @@ def api_logs(user_id):
     finally:
         conn.close()
 
+@app.route('/api/stats/<int:user_id>', methods=['GET'])
+def api_stats(user_id):
+    from datetime import date, timedelta
+    
+    conn = get_db_connection()
+    
+    # Get all logs for the user to compute averages
+    logs = conn.execute('''
+        SELECT date, score FROM FoodLogs 
+        WHERE user_id = ? 
+        ORDER BY date ASC
+    ''', (user_id,)).fetchall()
+    conn.close()
+
+    # If no logs, return generic empty data
+    if not logs:
+        return jsonify({'labels': [], 'scores': []})
+
+    from collections import defaultdict
+    daily_totals = defaultdict(list)
+    
+    for log in logs:
+        daily_totals[log['date']].append(log['score'])
+        
+    # Generate labels (last 7 days sequentially)
+    labels = []
+    scores = []
+    today = date.today()
+    
+    for i in range(6, -1, -1):
+        target_date = (today - timedelta(days=i)).isoformat()
+        labels.append(target_date)
+        
+        if target_date in daily_totals:
+            # Calculate average for the day
+            avg_score = sum(daily_totals[target_date]) / len(daily_totals[target_date])
+            scores.append(round(avg_score))
+        else:
+            # No data for this day, append a 0 or null
+            scores.append(0)
+            
+    return jsonify({
+        'labels': labels,
+        'scores': scores
+    })
+
 @app.route('/api/analyze', methods=['POST'])
 def api_analyze():
     data = request.get_json()
     label_text = data.get('labelText', '')
 
-    if not api_key:
+    if not client:
         return jsonify({'error': 'Gemini API is not configured. Add GEMINI_API_KEY to .env file.'}), 500
 
     try:
-        model = genai.GenerativeModel('gemini-1.5-flash')
         prompt = f"""
 Analyze the following food label ingredients and nutritional information:
 "{label_text}"
@@ -228,7 +406,7 @@ Return the response STRICTLY as a JSON object, like this:
   "explanation": "This food is... "
 }}
 """
-        response = model.generate_content(prompt)
+        response = client.models.generate_content(model='gemini-3-flash-preview', contents=prompt)
         response_text = response.text
         
         json_match = re.search(r'\{.*\}', response_text, re.DOTALL)

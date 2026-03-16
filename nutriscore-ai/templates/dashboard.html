@@ -13,8 +13,11 @@
     <nav class="navbar navbar-expand-lg navbar-dark bg-success shadow-sm">
         <div class="container">
             <span class="navbar-brand fw-bold">🍎 NutriScore AI</span>
-            <div class="d-flex">
-                <span class="navbar-text me-3 fw-bold text-white" id="userNameDisplay">User</span>
+            <div class="d-flex align-items-center">
+                <a href="{{ url_for('user_profile') }}" class="d-flex align-items-center text-decoration-none" title="View Profile Stats">
+                    <img id="userAvatar" src="" alt="Profile" class="rounded-circle me-2 d-none" width="32" height="32" style="border: 2px solid white;">
+                    <span class="navbar-text me-3 fw-bold text-white" id="userNameDisplay">User</span>
+                </a>
                 <button id="logoutBtn" class="btn btn-outline-light btn-sm">Logout</button>
             </div>
         </div>
@@ -70,15 +73,14 @@
                         Log Daily Food
                     </h5>
                     <form id="logFoodForm">
-                        <div class="mb-2">
-                            <label class="form-label small text-muted">Food Name</label>
-                            <input type="text" id="logFoodName" class="form-control form-control-sm" required placeholder="e.g., Apple">
-                        </div>
                         <div class="mb-3">
-                            <label class="form-label small text-muted">Health Score Estimate (0-100)</label>
-                            <input type="number" id="logFoodScore" class="form-control form-control-sm" required min="0" max="100" placeholder="e.g., 90">
+                            <label class="form-label small text-muted">Food Name</label>
+                            <input type="text" id="logFoodName" class="form-control form-control-sm" required placeholder="e.g., Apple, Pizza, Salad">
                         </div>
-                        <button type="submit" class="btn btn-sm btn-warning w-100">Add to Log</button>
+                        <button type="submit" id="submitLogBtn" class="btn btn-sm btn-warning w-100">
+                            <span id="logSpinner" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                            <span>Add to Log (AI Score)</span>
+                        </button>
                     </form>
                     <hr>
                     <h6 class="fw-bold small text-muted mb-2">Recent Logs</h6>
@@ -95,43 +97,51 @@
                     <div class="row" id="recommendationsContainer">
                         <!-- Card 1 -->
                         <div class="col-md-6 col-lg-3 mb-3">
-                            <div class="card h-100 bg-success bg-opacity-10 border-success border-opacity-25 rounded-3">
-                                <div class="card-body text-center">
-                                    <div class="fs-1 mb-2">🥗</div>
-                                    <h6 class="fw-bold text-success">Leafy Salads</h6>
-                                    <p class="small text-muted mb-0">High fiber, low sugar. Great for digestion.</p>
+                            <a href="{{ url_for('recommendations', category='salads') }}" class="text-decoration-none text-dark d-block h-100">
+                                <div class="card h-100 bg-success bg-opacity-10 border-success border-opacity-25 rounded-3">
+                                    <div class="card-body text-center">
+                                        <div class="fs-1 mb-2">🥗</div>
+                                        <h6 class="fw-bold text-success">Leafy Salads</h6>
+                                        <p class="small text-muted mb-0">High in vitamins & fiber.</p>
+                                    </div>
                                 </div>
-                            </div>
+                            </a>
                         </div>
                         <!-- Card 2 -->
                         <div class="col-md-6 col-lg-3 mb-3">
-                            <div class="card h-100 bg-info bg-opacity-10 border-info border-opacity-25 rounded-3">
-                                <div class="card-body text-center">
-                                    <div class="fs-1 mb-2">🫐</div>
-                                    <h6 class="fw-bold text-info">Berries</h6>
-                                    <p class="small text-muted mb-0">Packed with antioxidants and low in calories.</p>
+                            <a href="{{ url_for('recommendations', category='berries') }}" class="text-decoration-none text-dark d-block h-100">
+                                <div class="card h-100 bg-info bg-opacity-10 border-info border-opacity-25 rounded-3">
+                                    <div class="card-body text-center">
+                                        <div class="fs-1 mb-2">🫐</div>
+                                        <h6 class="fw-bold text-info">Berries</h6>
+                                        <p class="small text-muted mb-0">Packed with antioxidants and low in calories.</p>
+                                    </div>
                                 </div>
-                            </div>
+                            </a>
                         </div>
                         <!-- Card 3 -->
                         <div class="col-md-6 col-lg-3 mb-3">
-                            <div class="card h-100 bg-warning bg-opacity-10 border-warning border-opacity-25 rounded-3">
-                                <div class="card-body text-center">
-                                    <div class="fs-1 mb-2">🥚</div>
-                                    <h6 class="fw-bold text-warning">High Protein</h6>
-                                    <p class="small text-muted mb-0">Eggs or lentil soup to maintain muscle health.</p>
+                            <a href="{{ url_for('recommendations', category='proteins') }}" class="text-decoration-none text-dark d-block h-100">
+                                <div class="card h-100 bg-warning bg-opacity-10 border-warning border-opacity-25 rounded-3">
+                                    <div class="card-body text-center">
+                                        <div class="fs-1 mb-2">🥚</div>
+                                        <h6 class="fw-bold text-warning">High Protein</h6>
+                                        <p class="small text-muted mb-0">Eggs or lentil soup to maintain muscle health.</p>
+                                    </div>
                                 </div>
-                            </div>
+                            </a>
                         </div>
                          <!-- Card 4 -->
                          <div class="col-md-6 col-lg-3 mb-3">
-                            <div class="card h-100 bg-primary bg-opacity-10 border-primary border-opacity-25 rounded-3">
-                                <div class="card-body text-center">
-                                    <div class="fs-1 mb-2">💧</div>
-                                    <h6 class="fw-bold text-primary">Detox Water</h6>
-                                    <p class="small text-muted mb-0">Lemon & mint water for hydration and detox.</p>
+                            <a href="{{ url_for('recommendations', category='water') }}" class="text-decoration-none text-dark d-block h-100">
+                                <div class="card h-100 bg-primary bg-opacity-10 border-primary border-opacity-25 rounded-3">
+                                    <div class="card-body text-center">
+                                        <div class="fs-1 mb-2">💧</div>
+                                        <h6 class="fw-bold text-primary">Detox Water</h6>
+                                        <p class="small text-muted mb-0">Lemon & mint water for hydration and detox.</p>
+                                    </div>
                                 </div>
-                            </div>
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -163,7 +173,13 @@
 
                 // Update Name
                 if (data.user) {
-                    document.getElementById('userNameDisplay').textContent = "Hi, " + data.user.name.split(' ')[0];
+                    const firstName = data.user.name.split(' ')[0];
+                    document.getElementById('userNameDisplay').textContent = "Hi, " + firstName;
+                    
+                    // Display Avatar
+                    const avatarImg = document.getElementById('userAvatar');
+                    avatarImg.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(data.user.name)}&background=ffffff&color=198754&bold=true`;
+                    avatarImg.classList.remove('d-none');
                 }
 
                 // Update Health Score
@@ -217,26 +233,42 @@
             }
         }
 
-        // Log Food Form Submission
+        // Log Food Form Submission (AI Triggered)
         document.getElementById('logFoodForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const food_name = document.getElementById('logFoodName').value;
-            const score = parseInt(document.getElementById('logFoodScore').value);
+            const food_name = document.getElementById('logFoodName').value.trim();
+            if (!food_name) return;
+
+            const submitBtn = document.getElementById('submitLogBtn');
+            const spinner = document.getElementById('logSpinner');
+            const btnText = submitBtn.querySelector('span:not(.spinner-border)');
+
+            // Loading state
+            submitBtn.disabled = true;
+            spinner.classList.remove('d-none');
+            btnText.textContent = ' AI Calculating...';
 
             try {
                 const res = await fetch(`/api/logs/${userId}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ food_name, score })
+                    body: JSON.stringify({ food_name })
                 });
 
                 if (res.ok) {
                     document.getElementById('logFoodName').value = '';
-                    document.getElementById('logFoodScore').value = '';
-                    loadDashboard(); // reload UI
+                    loadDashboard(); // reload UI with new logged food and updated health score
+                } else {
+                    const err = await res.json();
+                    alert(err.error || "Failed to log food.");
                 }
             } catch (err) {
                 console.error(err);
+                alert("Cannot connect to server.");
+            } finally {
+                submitBtn.disabled = false;
+                spinner.classList.add('d-none');
+                btnText.textContent = ' Add to Log (AI Score)';
             }
         });
 

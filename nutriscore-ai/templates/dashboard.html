@@ -45,9 +45,9 @@
                         <span class="bg-primary text-white rounded-circle d-inline-flex justify-content-center align-items-center me-2" style="width: 30px; height: 30px; font-size: 14px;">1</span> 
                         Food Label Analysis
                     </h5>
-                    <p class="text-muted small">Paste the ingredients from a packaged food label to see if it's healthy.</p>
+                    <p class="text-muted small">Upload a picture of the ingredients or nutrition label from a packaged food to see if it's healthy.</p>
                     
-                    <textarea id="labelInput" class="form-control mb-3" rows="3" placeholder="e.g., Sugar, Palm Oil, Wheat Flour, Artificial Flavors..."></textarea>
+                    <input type="file" id="labelImage" class="form-control mb-3" accept="image/*">
                     
                     <button id="analyzeBtn" class="btn btn-primary mb-3">
                         <span id="analyzeSpinner" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
@@ -277,8 +277,17 @@
         let lastAnalyzedFood = '';
 
         document.getElementById('analyzeBtn').addEventListener('click', async () => {
-            const labelText = document.getElementById('labelInput').value.trim();
-            if (!labelText) return alert("Please enter some ingredients.");
+            const fileInput = document.getElementById('labelImage');
+            
+            if (!fileInput.files || fileInput.files.length === 0) {
+                return alert("Please select an image file first.");
+            }
+
+            const file = fileInput.files[0];
+            
+            // Create FormData to send the file securely
+            const formData = new FormData();
+            formData.append('image', file);
 
             const btn = document.getElementById('analyzeBtn');
             const spinner = document.getElementById('analyzeSpinner');
@@ -291,10 +300,11 @@
             logBtn.classList.add('d-none');
 
             try {
+                // Notice we do NOT set Content-Type; the browser sets it to multipart/form-data 
+                // automatically with the correct boundary when passing FormData.
                 const res = await fetch('/api/analyze', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ labelText })
+                    body: formData
                 });
 
                 if (!res.ok) {

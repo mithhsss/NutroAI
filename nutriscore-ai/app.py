@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify, render_template
 import sqlite3
 import os
 from google import genai
+from google.genai import types
 from dotenv import load_dotenv
 import json
 import re
@@ -383,30 +384,42 @@ def api_stats(user_id):
 
 @app.route('/api/analyze', methods=['POST'])
 def api_analyze():
-    data = request.get_json()
-    label_text = data.get('labelText', '')
+    if 'image' not in request.files:
+        return jsonify({'error': 'No image file uploaded'}), 400
+
+    image_file = request.files['image']
+    if image_file.filename == '':
+        return jsonify({'error': 'No selected image file'}), 400
 
     if not client:
         return jsonify({'error': 'Gemini API is not configured. Add GEMINI_API_KEY to .env file.'}), 500
 
     try:
-        prompt = f"""
-Analyze the following food label ingredients and nutritional information:
-"{label_text}"
+        # Read the image bytes into memory securely
+        image_bytes = image_file.read()
+        mime_type = image_file.mimetype
 
+        prompt = """
+Look at the ingredients or nutrition information presented in this uploaded image label.
 Determine:
 1. Is it Healthy, Moderately Healthy, or Unhealthy?
 2. Give it a score from 0 to 100 (100 being healthiest).
-3. Provide a short explanation (2-3 sentences).
+3. Provide a short explanation (2-3 sentences max).
 
 Return the response STRICTLY as a JSON object, like this:
-{{
+{
   "status": "Healthy / Moderately Healthy / Unhealthy",
   "score": 85,
   "explanation": "This food is... "
-}}
-"""
-        response = client.models.generate_content(model='gemini-3-flash-preview', contents=prompt)
+}
+"""     
+        # Use python sdk `types` object to securely format the image attachment for Gemini processing
+        contents = [
+            types.Part.from_bytes(data=image_bytes, mime_type=mime_type),
+            prompt
+        ]
+
+        response = client.models.generate_content(model='gemini-3-flash-preview', contents=contents)
         response_text = response.text
         
         json_match = re.search(r'\{.*\}', response_text, re.DOTALL)
@@ -419,7 +432,7 @@ Return the response STRICTLY as a JSON object, like this:
 
     except Exception as e:
         print('Error calling Gemini API:', e)
-        return jsonify({'error': 'Failed to analyze label'}), 500
+        return jsonify({'error': 'Failed to analyze label image'}), 500
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)

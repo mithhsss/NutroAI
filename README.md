@@ -29,3 +29,5 @@ NutriScore AI is a simple web application that provides personalized food recomm
 - Dashboard tracking health score and previous food logs
 - AI-Powered Food Label Analysis using Gemini
 - Food Recommendations (fruits, salads, healthy snacks)
+  <img width="1876" height="1100" alt="image" src="https://github.com/user-attachments/assets/4387c2ee-26f5-47ae-81cd-8a94bd201984" />
+

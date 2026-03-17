@@ -5,7 +5,7 @@ NutriScore AI is a simple web application that provides personalized food recomm
 ## Tech Stack
 
 - Frontend: HTML, CSS, JavaScript, Bootstrap
-- Backend: Node.js, Express
+- Backend: Python Flask
 - Database: SQLite
 - AI Integration: Google Gemini API
 
